@@ -1,5 +1,18 @@
 local _, HG = ...
 
+HG.layout = {
+    sectionX = 12,
+    sectionWidth = 736,
+    inset = 14,
+    controlHeight = 26,
+    gap = 10,
+    rowGap = 18,
+    titleY = -12,
+    singleRowY = -58,
+    firstRowY = -41,
+    secondRowY = -85,
+}
+
 local function backdrop(frame, color)
     frame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -17,7 +30,7 @@ function HG:Section(parent, title, x, y, width, height)
     section:SetSize(width, height)
     backdrop(section, self.colors.inset)
     local label = section:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    label:SetPoint("TOPLEFT", 14, -12)
+    label:SetPoint("TOPLEFT", self.layout.inset, self.layout.titleY)
     label:SetText(title)
     return section
 end
@@ -33,7 +46,7 @@ end
 function HG:Button(parent, text, x, y, width, callback, tooltip)
     local button = CreateFrame("Button", nil, parent)
     button:SetPoint("TOPLEFT", x, y)
-    button:SetSize(width, 26)
+    button:SetSize(width, self.layout.controlHeight)
     backdrop(button, self.colors.gold)
     button.label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     button.label:SetPoint("CENTER")
@@ -76,7 +89,7 @@ end
 function HG:SecureSelfButton(parent, text, x, y, width, callback, tooltip)
     local button = CreateFrame("Button", nil, parent, "SecureActionButtonTemplate")
     button:SetPoint("TOPLEFT", x, y)
-    button:SetSize(width, 26)
+    button:SetSize(width, self.layout.controlHeight)
     backdrop(button, self.colors.gold)
     button.label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     button.label:SetPoint("CENTER")
@@ -108,9 +121,31 @@ function HG:SecureSelfButton(parent, text, x, y, width, callback, tooltip)
     return button
 end
 
+function HG:CenterRow(parent, controls, y, gap)
+    gap = gap or self.layout.gap
+    local total = 0
+    for _, control in ipairs(controls) do total = total + control:GetWidth() end
+    total = total + math.max(0, #controls - 1) * gap
+    local x = math.floor((parent:GetWidth() - total) / 2)
+    for _, control in ipairs(controls) do
+        control:ClearAllPoints()
+        control:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+        x = x + control:GetWidth() + gap
+    end
+end
+
+function HG:AlignRow(parent, controls, x, y, gap)
+    gap = gap or self.layout.gap
+    for _, control in ipairs(controls) do
+        control:ClearAllPoints()
+        control:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+        x = x + control:GetWidth() + gap
+    end
+end
+
 function HG:ReadOnly(parent, x, y, width, initial)
     local edit = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
-    edit:SetPoint("TOPLEFT", x, y)
+    edit:SetPoint("TOPLEFT", x, y - 1)
     edit:SetSize(width or 110, 24)
     edit:SetAutoFocus(false)
     edit:SetText(tostring(initial or ""))
@@ -122,7 +157,9 @@ end
 
 function HG:Edit(parent, key, x, y, width, numeric, initial)
     local edit = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
-    edit:SetPoint("TOPLEFT", x, y)
+    -- InputBoxTemplate is 24px tall while HavenGM controls are 26px.
+    -- Dropping the edit box one pixel gives both control types the same center.
+    edit:SetPoint("TOPLEFT", x, y - 1)
     edit:SetSize(width or 110, 24)
     edit:SetAutoFocus(false)
     edit:SetNumeric(numeric == true)
@@ -193,6 +230,62 @@ function HG:PairToggle(parent, key, text, x, y, width, enableCommand, disableCom
     end
     button:SetScript("OnLeave", function(self) self:Refresh(); GameTooltip_Hide() end)
     self.pairButtons[key] = button
+    button:Refresh()
+    return button
+end
+
+function HG:ClientPossessActive()
+    if type(IsPossessBarVisible) == "function" and IsPossessBarVisible() then
+        return true
+    end
+    if type(UnitHasVehicleUI) == "function" and UnitHasVehicleUI("player") then
+        return true
+    end
+    if type(UnitInVehicle) == "function" and UnitInVehicle("player") then
+        return true
+    end
+    return false
+end
+
+function HG:IsPossessing()
+    return self:ClientPossessActive()
+        or (self.db and self.db.creatorToggles and self.db.creatorToggles.possess == true)
+end
+
+function HG:SyncPossessState()
+    if not self.db then return end
+    self.db.creatorToggles = self.db.creatorToggles or {}
+    self.db.creatorToggles.possess = self:ClientPossessActive()
+    if self.possessButton then self.possessButton:Refresh() end
+    if self.RefreshFactionButton then self:RefreshFactionButton() end
+end
+
+function HG:PossessToggle(parent, x, y, width)
+    self.db.creatorToggles = self.db.creatorToggles or {}
+    local button
+    button = self:Button(parent, "POSSESS OFF", x, y, width, function()
+        -- The current target is irrelevant while possessed. Always release
+        -- first, even if the user has selected a completely different NPC.
+        if HG:IsPossessing() then
+            if HG:Execute("unpossess") then
+                HG.db.creatorToggles.possess = false
+                HG.possessedGuid = nil
+            end
+        elseif HG:Execute("possess") then
+            HG.db.creatorToggles.possess = true
+            HG.possessedGuid = UnitGUID("target")
+        end
+        button:Refresh()
+        HG:RefreshFactionButton()
+    end, "While possessed this button always releases control. Changing target can never possess a second NPC.")
+    function button:Refresh()
+        local active = HG:IsPossessing()
+        self.label:SetText(active and "RELEASE" or "POSSESS")
+        self:SetRestingColor(active and HG.colors.on or HG.colors.off)
+    end
+    button:SetScript("OnLeave", function(self) self:Refresh(); GameTooltip_Hide() end)
+    self.possessButton = button
+    self.pairButtons.possess = button
     button:Refresh()
     return button
 end

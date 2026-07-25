@@ -1,8 +1,0 @@
-## Interface: 80300
-## Title: Haven GM Toolkit
-## Notes: Local quest-testing tools for HavenCore
-## Author: Local
-## Version: 0.7.4
-## SavedVariables: HavenGMDB
-
-HavenGM.lua

@@ -17,7 +17,7 @@ HG.commandCatalog = {
     kill = { template = ".die", requiresTarget = true, risk = "target" },
     -- HavenCore's handler discards its first numeric token before parsing the
     -- actual damage value. Keep a zero compatibility token for this core.
-    damage = { template = ".damage 0 %d", requiresTarget = true, risk = "target" },
+    damage = { template = ".damage 0%d", requiresTarget = true, risk = "target" },
     reviveName = { template = ".revive %s", risk = "target" },
     save = { template = ".save", risk = "safe" },
     repairName = { template = ".repairitems %s", risk = "safe" },

@@ -151,7 +151,7 @@ function HG:EnsureLookupModal()
         }
         local searchField = searchFields[self.fieldKey]
         if searchField and self.selected.name then HG:SetField(searchField, self.selected.name) end
-        HG:Notify("Loaded " .. self.selected.id .. " into " .. tostring(self.fieldKey) .. ".")
+        if HG.SetLookupStatus then HG:SetLookupStatus(self.selected, self.fieldKey) end
         self:Hide()
     end
 

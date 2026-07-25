@@ -3,6 +3,7 @@ local _, HG = ...
 HG.followers = {}
 HG.followerOrder = {}
 HG.maxFollowers = 8
+local FOLLOWER_FALLBACK_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local function creatureEntry(guid)
     if not guid then return nil end
@@ -34,7 +35,7 @@ end
 function HG:RefreshFactionButton()
     local button = self.factionButton
     if not button then return end
-    if self.db.creatorToggles and self.db.creatorToggles.possess == true then
+    if self:IsPossessing() then
         button:Disable()
         button.label:SetText("POSSESSED")
         button:SetRestingColor(self.colors.off)
@@ -54,7 +55,7 @@ function HG:RefreshFactionButton()
 end
 
 function HG:ToggleTargetFaction()
-    if self.db.creatorToggles and self.db.creatorToggles.possess == true then
+    if self:IsPossessing() then
         self:Notify("Release possession before changing faction.")
         return
     end
@@ -71,15 +72,20 @@ end
 
 function HG:RefreshFollowerIcons()
     local visible = 0
+    local seen = {}
+    local compactOrder = {}
     for _, guid in ipairs(self.followerOrder) do
         local follower = self.followers[guid]
-        if follower then
+        if follower and not seen[guid] then
+            seen[guid] = true
+            compactOrder[#compactOrder + 1] = guid
             visible = visible + 1
             follower.button:ClearAllPoints()
             follower.button:SetPoint("TOPLEFT", self.frame, "TOPRIGHT", 4, -8 - ((visible - 1) * 52))
             follower.button:Show()
         end
     end
+    self.followerOrder = compactOrder
 end
 
 function HG:RemoveFollower(guid)
@@ -88,12 +94,19 @@ function HG:RemoveFollower(guid)
     follower.button:Hide()
     self.followers[guid] = nil
     if self.db and self.db.followers then self.db.followers[guid] = nil end
+    local compactOrder = {}
+    for _, orderedGuid in ipairs(self.followerOrder) do
+        if orderedGuid ~= guid then
+            compactOrder[#compactOrder + 1] = orderedGuid
+        end
+    end
+    self.followerOrder = compactOrder
     self:RefreshFollowerIcons()
     self:RefreshFollowerButton()
     self:RefreshFactionButton()
 end
 
-function HG:CreateFollower(guid, entry, name, portraitTexture)
+function HG:CreateFollower(guid, entry, name, useTargetPortrait)
     if not guid or not entry or self.followers[guid] then return self.followers[guid] ~= nil end
     if self:FollowerCount() >= self.maxFollowers then
         self:Notify("Follower list is full (8/8). Dismiss one before adding another.")
@@ -103,13 +116,13 @@ function HG:CreateFollower(guid, entry, name, portraitTexture)
     button:SetSize(48, 48)
     button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     local icon = button:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(43, 43)
+    icon:SetSize(38, 38)
     icon:SetPoint("CENTER")
-    if portraitTexture then icon:SetTexture(portraitTexture) else SetPortraitTexture(icon, "target") end
-    local border = button:CreateTexture(nil, "OVERLAY")
-    border:SetAllPoints()
-    border:SetTexture("Interface\\Buttons\\UI-Quickslot2")
-    button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    icon:SetTexture(FOLLOWER_FALLBACK_ICON)
+    if useTargetPortrait and UnitGUID("target") == guid then
+        SetPortraitTexture(icon, "target")
+    end
+    button:SetHighlightTexture(nil)
     button:SetAttribute("type1", "macro")
     button:SetAttribute("macrotext1", "/targetexact " .. name)
     button:SetAttribute("type2", "macro")
@@ -127,6 +140,7 @@ function HG:CreateFollower(guid, entry, name, portraitTexture)
     button:SetScript("PostClick", function(_, mouseButton)
         if mouseButton == "LeftButton" then
             if UnitGUID("target") == guid then
+                SetPortraitTexture(icon, "target")
                 HG:SetField("creatorEntry", entry)
                 HG:RefreshFollowerButton()
             else
@@ -142,14 +156,22 @@ function HG:CreateFollower(guid, entry, name, portraitTexture)
         HG:Notify("Follower removed: " .. name)
     end)
 
-    portraitTexture = icon:GetTexture()
     self.followers[guid] = {
-        guid = guid, entry = entry, name = name, portraitTexture = portraitTexture, button = button,
+        guid = guid, entry = entry, name = name, button = button,
     }
     self.db.followers = self.db.followers or {}
     self.db.followers[guid] = {
-        guid = guid, entry = entry, name = name, portraitTexture = portraitTexture,
+        guid = guid, entry = entry, name = name,
     }
+    -- A previously dismissed follower may still exist in an older in-memory
+    -- order list. Remove every stale occurrence before appending it once.
+    local compactOrder = {}
+    for _, orderedGuid in ipairs(self.followerOrder) do
+        if orderedGuid ~= guid and self.followers[orderedGuid] then
+            compactOrder[#compactOrder + 1] = orderedGuid
+        end
+    end
+    self.followerOrder = compactOrder
     self.followerOrder[#self.followerOrder + 1] = guid
     self:RefreshFollowerIcons()
     return true
@@ -159,7 +181,7 @@ function HG:AddTargetFollower()
     local guid = UnitGUID("target")
     local entry = creatureEntry(guid)
     if not guid or not entry then self:Notify("Select an NPC target first.") return false end
-    return self:CreateFollower(guid, entry, UnitName("target") or ("NPC " .. entry))
+    return self:CreateFollower(guid, entry, UnitName("target") or ("NPC " .. entry), true)
 end
 
 function HG:RestoreFollowers()
@@ -173,7 +195,7 @@ function HG:RestoreFollowers()
     for index, item in ipairs(saved) do
         if index > self.maxFollowers then break end
         local record = item.record
-        self:CreateFollower(item.guid, tonumber(record.entry), record.name or "Follower", record.portraitTexture)
+        self:CreateFollower(item.guid, tonumber(record.entry), record.name or "Follower", false)
     end
     self:RefreshFollowerIcons()
 end

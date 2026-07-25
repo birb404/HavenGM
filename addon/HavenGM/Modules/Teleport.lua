@@ -7,7 +7,7 @@ local function shortLabel(text)
 end
 
 HG:RegisterTab("teleport", "TELEPORT", 4, function(parent)
-    local section = HG:Section(parent, "DESTINATIONS", 12, -12, 736, 270)
+    local section = HG:Section(parent, "DESTINATIONS", 12, -12, 736, 404)
     local selectedArea = HG.teleportAreas[2]
     local selectedDestination = selectedArea.destinations[1]
     local destinationDrop
@@ -48,15 +48,15 @@ HG:RegisterTab("teleport", "TELEPORT", 4, function(parent)
         emptyFavorites:Hide()
 
         for index, saved in ipairs(HG.db.teleportFavorites) do
-            if index > 10 then break end
+            if index > 25 then break end
             local favorite = saved
             local column = (index - 1) % 5
             local row = math.floor((index - 1) / 5)
             local button = HG:Button(
                 section,
                 shortLabel(favorite.text),
-                14 + column * 140,
-                -168 - row * 36,
+                21 + column * 140,
+                -202 - row * 42,
                 132,
                 function() rememberAndTeleport(favorite) end,
                 favorite.text .. "\nLeft-click: teleport\nRight-click: remove favorite"
@@ -79,32 +79,32 @@ HG:RegisterTab("teleport", "TELEPORT", 4, function(parent)
         end
     end
 
-    local areaDrop = HG:DropDown(section, "HavenGMAreaDropDown", 2, -38, 190, HG.teleportAreas, selectedArea, function(area)
+    local areaDrop = HG:DropDown(section, "HavenGMAreaDropDown", 2, -54, 190, HG.teleportAreas, selectedArea, function(area)
         selectedArea = area
         selectedDestination = area.destinations[1]
         destinationDrop:SetItems(area.destinations, selectedDestination)
         refreshFavoriteState()
     end)
-    destinationDrop = HG:DropDown(section, "HavenGMDestinationDropDown", 214, -38, 210, selectedArea.destinations, selectedDestination, function(destination)
+    destinationDrop = HG:DropDown(section, "HavenGMDestinationDropDown", 214, -54, 210, selectedArea.destinations, selectedDestination, function(destination)
         selectedDestination = destination
         refreshFavoriteState()
     end)
 
-    HG:Button(section, "TELEPORT", 458, -40, 104, function()
+    HG:Button(section, "TELEPORT", 468, -56, 104, function()
         selectedArea = areaDrop:GetSelected()
         selectedDestination = destinationDrop:GetSelected()
         rememberAndTeleport(selectedDestination)
     end)
 
-    favoriteButton = HG:Button(section, "FAVORITE", 572, -40, 38, function()
+    favoriteButton = HG:Button(section, "FAVORITE", 582, -56, 38, function()
         selectedDestination = destinationDrop:GetSelected()
         local index = findFavorite(selectedDestination.command)
         if index then
             table.remove(HG.db.teleportFavorites, index)
             HG:Notify("Favorite removed: " .. selectedDestination.text)
         else
-            if #HG.db.teleportFavorites >= 10 then
-                HG:Notify("You can save up to 10 teleport favorites. Right-click one below to remove it.")
+            if #HG.db.teleportFavorites >= 25 then
+                HG:Notify("You can save up to 25 teleport favorites. Right-click one below to remove it.")
                 return
             end
             table.insert(HG.db.teleportFavorites, {
@@ -127,16 +127,11 @@ HG:RegisterTab("teleport", "TELEPORT", 4, function(parent)
         GameTooltip_Hide()
     end)
 
-    HG:Button(section, "RETURN TO LAST LOCATION", 14, -88, 210, function() HG:Execute("recall") end,
+    HG:Button(section, "RETURN TO LAST LOCATION", 21, -108, 210, function() HG:Execute("recall") end,
         "Returns to the location stored by HavenCore before the last relevant teleport.")
-    HG:Button(section, "LAST USED", 238, -88, 110, function()
-        local recent = HG.db.teleportRecent[1]
-        if recent then rememberAndTeleport(recent)
-        else HG:Notify("No recent teleport in this session.") end
-    end)
 
-    HG:Label(section, "FAVORITES", 14, -138)
-    emptyFavorites = HG:Label(section, "Select a destination and click ☆ to add it here.", 14, -170, 500)
+    HG:Label(section, "FAVORITES", 21, -158)
+    emptyFavorites = HG:Label(section, "Select a destination and click the star to add it here.", 21, -202, 500)
 
     renderFavorites()
     refreshFavoriteState()

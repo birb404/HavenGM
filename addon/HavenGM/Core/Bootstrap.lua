@@ -1,7 +1,7 @@
 local ADDON_NAME, HG = ...
 
 HG.name = ADDON_NAME
-HG.version = "0.3.7-beta"
+HG.version = "1.0.0"
 HG.prefix = "|cffd59b32HavenGM:|r "
 HG.tabs = {}
 HG.tabByKey = {}
@@ -18,6 +18,10 @@ HG.colors = {
     onHover = { 0.08, 0.58, 0.18, 1 },
     off = { 0.48, 0.06, 0.06, 1 },
     offHover = { 0.67, 0.08, 0.08, 1 },
+    questPrevious = { 0.25, 0.07, 0.07, 1 },
+    questPreviousHover = { 0.38, 0.11, 0.10, 1 },
+    questNext = { 0.04, 0.24, 0.11, 1 },
+    questNextHover = { 0.07, 0.37, 0.17, 1 },
 }
 
 function HG:Notify(text)
@@ -96,9 +100,10 @@ end
 
 local events = CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
-events:RegisterEvent("PLAYER_LOGIN")
-events:SetScript("OnEvent", function(_, event, name)
-    if event == "ADDON_LOADED" and name == ADDON_NAME then
+events:RegisterEvent("PLAYER_ENTERING_WORLD")
+events:RegisterEvent("UPDATE_POSSESS_BAR")
+events:SetScript("OnEvent", function(_, event, ...)
+    if event == "ADDON_LOADED" and (...) == ADDON_NAME then
         HavenGMDB = HavenGMDB or {}
         HavenGMDB.schema = tonumber(HavenGMDB.schema) or 1
         HavenGMDB.position = HavenGMDB.position
@@ -129,16 +134,22 @@ events:SetScript("OnEvent", function(_, event, name)
         HavenGMDB.creatorToggles.possess = false
         HG.db = HavenGMDB
         HG:BuildUI()
-        HG:RestoreFollowers()
         HG:InstallIntegrations()
         HG:Notify("v" .. HG.version .. " loaded. Type /hgm to show or hide.")
-    elseif event == "PLAYER_LOGIN" and HG.db then
-        -- Runtime flags cannot be queried reliably. A real login therefore
-        -- starts with neutral local indicators without sending any commands.
-        if type(IsInitialLogin) == "function" and IsInitialLogin() then
+    elseif event == "PLAYER_ENTERING_WORLD" and HG.db then
+        local isInitialLogin, isReloadingUI = ...
+        -- This event explicitly distinguishes a fresh login from /reload.
+        -- Preserve server-side follower controls across reloads, but discard
+        -- stale controls when a new game session actually begins.
+        if isInitialLogin then
             HG:ClearFollowers()
             HG.db.factionModes = {}
             HG:RefreshRuntimeButtons()
+        elseif isReloadingUI then
+            HG:RestoreFollowers()
         end
+        HG:SyncPossessState()
+    elseif event == "UPDATE_POSSESS_BAR" and HG.db then
+        HG:SyncPossessState()
     end
 end)

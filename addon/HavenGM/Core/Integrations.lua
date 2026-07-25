@@ -127,14 +127,20 @@ function HG:InstallIntegrations()
         end
     end
 
-    local function loadQuest(button, id)
+    local function cleanQuestName(name)
+        if not name or name == "" then return nil end
+        name = name:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        name = name:gsub("%s*%[ID:%s*%d+%].*$", "")
+        return strtrim(name)
+    end
+
+    local function loadQuest(button, id, explicitName)
         if not id then return end
-        local name = questNameFromButton(button)
+        local name = cleanQuestName(explicitName or questNameFromButton(button))
         HG.lastQuestID = id
         HG.lastQuestName = name
         HG:SetField("questID", id)
-        if name then HG:SetField("questSearch", name:gsub("%s*%[ID:%s*%d+%].*$", "")) end
-        HG:Notify("Loaded quest ID: " .. id)
+        if name then HG:SetField("questSearch", name) end
     end
 
     local function decorateQuestButton(button)
@@ -162,6 +168,80 @@ function HG:InstallIntegrations()
         button.HavenGMQuestID:Show()
     end
 
+    local function decorateObjectiveTrackerBlock(block, fallbackID)
+        if not block then return end
+        local id = tonumber(block.id) or tonumber(block.questID) or tonumber(fallbackID)
+        local header = block.HeaderText or block.headerText
+        if not id or not header or not header.GetText then return end
+
+        if not block.HavenGMTrackerQuestID then
+            local badge = CreateFrame("Button", nil, block)
+            badge:SetSize(24, 18)
+            badge:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8X8",
+                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                edgeSize = 1,
+            })
+            badge:SetBackdropColor(0.08, 0.10, 0.13, 0.96)
+            badge:SetBackdropBorderColor(0.72, 0.42, 0.05, 1)
+            badge.label = badge:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            badge.label:SetAllPoints()
+            badge.label:SetText("ID")
+            badge.label:SetTextColor(1, 0.82, 0.18)
+            badge:SetFrameLevel((block.GetFrameLevel and block:GetFrameLevel() or 1) + 5)
+            badge:SetScript("OnEnter", function(self)
+                self:SetBackdropColor(0.28, 0.16, 0.02, 1)
+                GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+                GameTooltip:SetText(self.questName or ("Quest " .. tostring(self.questID)))
+                GameTooltip:AddLine("Quest ID: " .. tostring(self.questID), 0.83, 0.61, 0.20)
+                GameTooltip:AddLine("Click to load this quest into Quest Testing.", 0.85, 0.85, 0.85, true)
+                GameTooltip:Show()
+            end)
+            badge:SetScript("OnLeave", function(self)
+                self:SetBackdropColor(0.08, 0.10, 0.13, 0.96)
+                GameTooltip:Hide()
+            end)
+            badge:SetScript("OnClick", function(self)
+                loadQuest(nil, self.questID, self.questName)
+            end)
+            block.HavenGMTrackerQuestID = badge
+            HG.questIDBadges = HG.questIDBadges or {}
+            HG.questIDBadges[#HG.questIDBadges + 1] = badge
+        end
+
+        local badge = block.HavenGMTrackerQuestID
+        badge.questID = id
+        badge.questName = cleanQuestName(header:GetText())
+        badge:ClearAllPoints()
+        local itemButton = block.ItemButton or block.itemButton or block.QuestItemButton
+        if itemButton and itemButton.GetObjectType then
+            badge:SetPoint("RIGHT", itemButton, "LEFT", -3, 0)
+        else
+            -- Tracker titles begin immediately after the round quest icon.
+            -- This offset places the compact button just left of that icon.
+            badge:SetPoint("RIGHT", header, "LEFT", -27, 0)
+        end
+        badge:Show()
+    end
+
+    local function decorateObjectiveTracker()
+        local modules = {}
+        for _, name in ipairs({
+            "QUEST_TRACKER_MODULE",
+            "WORLD_QUEST_TRACKER_MODULE",
+            "CAMPAIGN_QUEST_TRACKER_MODULE",
+        }) do
+            if _G[name] then modules[#modules + 1] = _G[name] end
+        end
+        for _, module in ipairs(modules) do
+            if module and module.usedBlocks then
+                for key, block in pairs(module.usedBlocks) do
+                    decorateObjectiveTrackerBlock(block, key)
+                end
+            end
+        end
+    end
+
     local function decorateVisibleQuestNames()
         if HG.db.settings.showQuestIDs == false then
             for _, badge in ipairs(HG.questIDBadges or {}) do badge:Hide() end
@@ -183,8 +263,9 @@ function HG:InstallIntegrations()
             for _, button in pairs(titles) do decorateQuestButton(button) end
         end
 
-        -- The objective tracker is deliberately excluded because its narrow
-        -- headers overlap when IDs are appended at common UI scales.
+        -- The narrow objective tracker gets a separate compact button instead
+        -- of an ID suffix, avoiding overlap with wrapped quest titles.
+        decorateObjectiveTracker()
     end
     HG.RefreshQuestIDs = decorateVisibleQuestNames
 

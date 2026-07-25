@@ -20,36 +20,44 @@ HG:RegisterTab("debug", "DEBUG", 7, function(parent)
     end)
 
     local inspect = HG:Section(parent, "INSPECTION & ADVANCED ACTIONS", 12, -82, 736, 116)
-    HG:Button(inspect, "GPS", 14, -42, 68, function() HG:Execute("gps") end)
-    HG:Button(inspect, "GUID", 92, -42, 68, function() HG:Execute("guid") end)
-    HG:Button(inspect, "DISTANCE", 170, -42, 84, function() HG:Execute("distance") end)
-    HG:Button(inspect, "NPC INFO", 264, -42, 88, function() HG:Execute("npcInfo") end)
-    HG:Button(inspect, "OBJECT INFO", 362, -42, 102, function() HG:Execute("objectInfo") end)
-    HG:Button(inspect, "LINE OF SIGHT", 474, -42, 116, function() HG:Execute("debugLOS") end)
-    HG:Button(inspect, "AURAS", 600, -42, 72, function() HG:Execute("listAuras") end)
+    local inspectActions = {
+        HG:Button(inspect, "GPS", 0, -42, 68, function() HG:Execute("gps") end),
+        HG:Button(inspect, "GUID", 0, -42, 68, function() HG:Execute("guid") end),
+        HG:Button(inspect, "DISTANCE", 0, -42, 84, function() HG:Execute("distance") end),
+        HG:Button(inspect, "NPC INFO", 0, -42, 88, function() HG:Execute("npcInfo") end),
+        HG:Button(inspect, "OBJECT INFO", 0, -42, 102, function() HG:Execute("objectInfo") end),
+        HG:Button(inspect, "LINE OF SIGHT", 0, -42, 116, function() HG:Execute("debugLOS") end),
+        HG:Button(inspect, "AURAS", 0, -42, 72, function() HG:Execute("listAuras") end),
+    }
+    HG:CenterRow(inspect, inspectActions, -42, 8)
 
-    HG:Label(inspect, "Range", 14, -82)
-    HG:Edit(inspect, "nearRange", 58, -73, 58, true, "25")
-    HG:Button(inspect, "NEAR NPCS", 126, -73, 94, function()
-        local range = HG:GetPositiveInteger("nearRange", "range", 500)
-        if range then HG:Execute("npcNear", range) end
+    local nearNPCs = HG:Button(inspect, "NEAR NPCS", 0, -81, 94, function()
+        HG:Execute("npcNear", 50)
     end)
-    HG:Button(inspect, "NEAR OBJECTS", 230, -73, 108, function()
-        local range = HG:GetPositiveInteger("nearRange", "range", 500)
-        if range then HG:Execute("objectNear", range) end
+    local nearObjects = HG:Button(inspect, "NEAR OBJECTS", 0, -81, 108, function()
+        HG:Execute("objectNear", 50)
     end)
-    HG:Label(inspect, "Sound", 350, -82)
-    HG:Edit(inspect, "soundID", 396, -73, 62, true, "")
-    HG:Button(inspect, "PLAY", 468, -73, 58, function()
+
+    local soundGroup = CreateFrame("Frame", nil, inspect)
+    soundGroup:SetSize(214, HG.layout.controlHeight)
+    HG:Label(soundGroup, "Sound", 0, -9)
+    local sound = HG:Edit(soundGroup, "soundID", 46, 0, 62, true, "")
+    HG:ClearButton(soundGroup, sound, 118, 0)
+    HG:Button(soundGroup, "PLAY", 156, 0, 58, function()
         local id = HG:GetPositiveInteger("soundID", "sound ID")
         if id then HG:Execute("debugSound", id) end
     end)
-    HG:Label(inspect, "Anim", 538, -82)
-    HG:Edit(inspect, "animationID", 576, -73, 62, true, "")
-    HG:Button(inspect, "PLAY", 648, -73, 58, function()
+
+    local animationGroup = CreateFrame("Frame", nil, inspect)
+    animationGroup:SetSize(206, HG.layout.controlHeight)
+    HG:Label(animationGroup, "Anim", 0, -9)
+    local animation = HG:Edit(animationGroup, "animationID", 38, 0, 62, true, "")
+    HG:ClearButton(animationGroup, animation, 110, 0)
+    HG:Button(animationGroup, "PLAY", 148, 0, 58, function()
         local id = HG:GetPositiveInteger("animationID", "animation ID")
         if id then HG:Execute("debugAnim", id) end
     end)
+    HG:CenterRow(inspect, { nearNPCs, nearObjects, soundGroup, animationGroup }, -81, 10)
 
     local output = HG:Section(parent, "SERVER OUTPUT", 12, -210, 736, 208)
     local scroll = CreateFrame("ScrollFrame", "HavenGMDebugOutputScroll", output, "UIPanelScrollFrameTemplate")
@@ -64,11 +72,19 @@ HG:RegisterTab("debug", "DEBUG", 7, function(parent)
     text:SetTextInsets(4, 4, 4, 4)
     text:SetScript("OnEscapePressed", text.ClearFocus)
     scroll:SetScrollChild(text)
+    local function refreshScrollBar()
+        C_Timer.After(0, function()
+            local scrollBar = scroll.ScrollBar or _G.HavenGMDebugOutputScrollScrollBar
+            if scrollBar then scrollBar:SetShown((scroll:GetVerticalScrollRange() or 0) > 0) end
+        end)
+    end
     HG.output.Refresh = function(self)
         text:SetText(self:GetText())
         text:SetCursorPosition(0)
+        refreshScrollBar()
     end
     HG.output:Refresh()
+    scroll:SetScript("OnSizeChanged", refreshScrollBar)
     HG:Button(output, "SELECT ALL", 604, -40, 102, function()
         text:SetFocus()
         text:HighlightText()
@@ -78,7 +94,8 @@ HG:RegisterTab("debug", "DEBUG", 7, function(parent)
         HG.output:Refresh()
     end)
     HG:Label(output, "First ID", 604, -116)
-    local firstID = HG:Edit(output, "debugFirstID", 604, -132, 102, true, "")
+    local firstID = HG:Edit(output, "debugFirstID", 610, -132, 60, true, "")
+    HG:ClearButton(output, firstID, 678, -132)
     HG:Button(output, "EXTRACT", 604, -164, 102, function()
         local id = HG.output:FirstID()
         if id then

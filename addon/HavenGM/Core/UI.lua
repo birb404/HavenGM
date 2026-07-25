@@ -44,13 +44,13 @@ function HG:BuildUI()
     frame:SetMovable(self.db.settings.lockFrame ~= true)
     self.frame = frame
 
-    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 54, -16)
-    title:SetText("HAVEN  |cff8fb8e8GM TOOLKIT|r")
     local headerIcon = frame:CreateTexture(nil, "ARTWORK")
     headerIcon:SetSize(32, 32)
-    headerIcon:SetPoint("TOPLEFT", 18, -7)
+    headerIcon:SetPoint("TOPLEFT", 18, -14)
     headerIcon:SetTexture("Interface\\AddOns\\HavenGM\\Media\\HavenIcon.tga")
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("LEFT", headerIcon, "RIGHT", 4, 0)
+    title:SetText("HAVEN  |cff8fb8e8GM TOOLKIT|r")
     local version = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     version:SetPoint("TOPRIGHT", -42, -18)
     version:SetText("v" .. self.version)
@@ -58,16 +58,18 @@ function HG:BuildUI()
     close:SetPoint("TOPRIGHT", -5, -5)
 
     self.tabPanels, self.tabButtons = {}, {}
-    local tabX = 16
+    local tabGap = 4
+    local tabWidth = 89
+    local tabRowWidth = (#self.tabs * tabWidth) + (math.max(0, #self.tabs - 1) * tabGap)
+    local tabX = math.floor((frame:GetWidth() - tabRowWidth) / 2)
     for _, definition in ipairs(self.tabs) do
-        local width = math.floor(750 / #self.tabs)
-        local button = self:Button(frame, definition.title, tabX, -42, width - 4, function() HG:ShowTab(definition.key) end)
-        button:SetSize(width - 4, 28)
+        local button = self:Button(frame, definition.title, tabX, -49, tabWidth, function() HG:ShowTab(definition.key) end)
+        button:SetSize(tabWidth, 28)
         self.tabButtons[definition.key] = button
-        tabX = tabX + width
+        tabX = tabX + tabWidth + tabGap
 
         local panel = CreateFrame("Frame", nil, frame)
-        panel:SetPoint("TOPLEFT", 15, -78)
+        panel:SetPoint("TOPLEFT", 15, -85)
         panel:SetSize(760, 430)
         self.tabPanels[definition.key] = panel
         definition.build(panel)
@@ -78,8 +80,11 @@ function HG:BuildUI()
     minimap:SetPoint("BOTTOMLEFT", Minimap, "BOTTOMLEFT", -3, -2)
     minimap:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     local icon = minimap:CreateTexture(nil, "BACKGROUND")
-    icon:SetSize(20, 20); icon:SetPoint("CENTER", 0, 1)
-    icon:SetTexture("Interface\\AddOns\\HavenGM\\Media\\HavenIcon.tga")
+    -- Slightly oversize the artwork inside the stock tracking border. The
+    -- source icon has transparent edge pixels which otherwise expose a bright
+    -- crescent along the bottom of the minimap button.
+    icon:SetSize(22, 22); icon:SetPoint("CENTER", 0, 0)
+    icon:SetTexture("Interface\\AddOns\\HavenGM\\Media\\HavenMinimapIcon.tga")
     icon:SetTexCoord(0, 1, 0, 1)
     local border = minimap:CreateTexture(nil, "OVERLAY")
     border:SetSize(54, 54); border:SetPoint("TOPLEFT")
