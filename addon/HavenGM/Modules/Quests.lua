@@ -15,8 +15,10 @@ HG:RegisterTab("quests", "QUESTS", 3, function(parent)
     HG:Edit(section, "questID", 74, -77, 110, true, "")
     HG:Button(section, "LOAD SELECTED QUEST", 194, -77, 154, function()
         local selected = C_QuestLog and C_QuestLog.GetSelectedQuest and C_QuestLog.GetSelectedQuest()
+        selected = (selected and selected > 0 and selected) or HG.lastQuestID
         if selected and selected > 0 then
             HG:SetField("questID", selected)
+            if HG.lastQuestName then HG:SetField("questSearch", HG.lastQuestName) end
             HG:Notify("Loaded selected quest ID: " .. selected)
         else
             HG:Notify("Select a quest in Map & Quest Log first.")
@@ -31,31 +33,26 @@ HG:RegisterTab("quests", "QUESTS", 3, function(parent)
         local id = HG:GetPositiveInteger("questID", "quest ID")
         if id then HG:Execute("questComplete", id) end
     end, "Force-completes standard objectives. Scripted or scenario-specific quest logic may still require normal gameplay.")
-    HG:Button(section, "REMOVE", 208, -120, 88, function()
+    HG:SecureSelfButton(section, "REMOVE", 208, -120, 88, function()
         local id = HG:GetPositiveInteger("questID", "quest ID")
         if id then HG:Execute("questRemove", id) end
-    end, "HavenCore requires your player character to be selected.")
+    end, "Securely targets your own character before removing the quest.")
     HG:Button(section, "GO TO OBJECTIVE", 306, -120, 142, function()
         local id = HG:GetPositiveInteger("questID", "quest ID")
         if id then HG:Execute("questGo", id) end
     end)
-    HG:Button(section, "RESET FOR REPLAY", 458, -120, 142, function()
+    HG:SecureSelfButton(section, "RESET FOR REPLAY", 458, -120, 142, function()
         local id = HG:GetPositiveInteger("questID", "quest ID")
         if not id then return end
         HG:Confirm(
             "Remove active/rewarded state and add this quest again?\nYour own character will be targeted.",
             ".quest remove " .. id .. "\n.quest add " .. id,
             function()
-                if InCombatLockdown and InCombatLockdown() then
-                    HG:Notify("Leave combat, target your own character, then try again.")
-                    return
-                end
-                TargetUnit("player")
                 HG:Execute("questRemove", id)
                 C_Timer.After(0.35, function() HG:Execute("questAdd", id) end)
             end
         )
-    end, "HavenCore's Remove clears both active and rewarded state. The quest is then added again.")
+    end, "Securely targets yourself, clears active/rewarded state and adds the quest again. Use outside combat.")
 
     local note = HG:Label(section,
         "COMPLETE uses HavenCore ForceCompleteQuest. It works well for normal objectives, but scripted quests can still require their actual events.",

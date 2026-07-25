@@ -1,7 +1,7 @@
 local ADDON_NAME, HG = ...
 
 HG.name = ADDON_NAME
-HG.version = "0.3.4-beta"
+HG.version = "0.3.5-beta"
 HG.prefix = "|cffd59b32HavenGM:|r "
 HG.tabs = {}
 HG.tabByKey = {}
@@ -122,6 +122,11 @@ events:SetScript("OnEvent", function(_, event, name)
         HavenGMDB.creatorToggles = HavenGMDB.creatorToggles or {}
         HavenGMDB.followers = HavenGMDB.followers or {}
         HavenGMDB.factionModes = HavenGMDB.factionModes or {}
+        HavenGMDB.cheatsEnabled = false
+        for _, key in ipairs({ "god", "cast", "cooldown", "power", "fly" }) do
+            HavenGMDB.toggles[key] = false
+        end
+        HavenGMDB.creatorToggles.possess = false
         HG.db = HavenGMDB
         HG:BuildUI()
         HG:RestoreFollowers()
@@ -133,13 +138,6 @@ events:SetScript("OnEvent", function(_, event, name)
         if type(IsInitialLogin) == "function" and IsInitialLogin() then
             HG:ClearFollowers()
             HG.db.factionModes = {}
-            HG.db.cheatsEnabled = false
-            for _, key in ipairs({ "god", "cast", "cooldown", "power", "fly" }) do
-                HG.db.toggles[key] = false
-            end
-            for _, key in ipairs({ "follow", "possess" }) do
-                HG.db.creatorToggles[key] = false
-            end
             HG:RefreshRuntimeButtons()
         end
     end

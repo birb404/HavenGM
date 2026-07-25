@@ -73,6 +73,41 @@ function HG:ClearButton(parent, field, x, y, cleared)
     return button
 end
 
+function HG:SecureSelfButton(parent, text, x, y, width, callback, tooltip)
+    local button = CreateFrame("Button", nil, parent, "SecureActionButtonTemplate")
+    button:SetPoint("TOPLEFT", x, y)
+    button:SetSize(width, 26)
+    backdrop(button, self.colors.gold)
+    button.label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    button.label:SetPoint("CENTER")
+    button.label:SetText(text)
+    button.restingColor = self.colors.gold
+    function button:SetRestingColor(color)
+        self.restingColor = color or HG.colors.gold
+        self:SetBackdropColor(unpack(self.restingColor))
+    end
+    function button:RestoreColor()
+        self:SetBackdropColor(unpack(self.restingColor or HG.colors.gold))
+    end
+    button:SetAttribute("type", "macro")
+    button:SetAttribute("macrotext", "/targetexact " .. tostring(UnitName("player") or "player"))
+    button:SetScript("PostClick", function() C_Timer.After(0.05, callback) end)
+    button:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(unpack(HG.colors.goldHover))
+        if tooltip then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText(self.label:GetText())
+            GameTooltip:AddLine(tooltip, 1, 1, 1, true)
+            GameTooltip:Show()
+        end
+    end)
+    button:SetScript("OnLeave", function(self)
+        self:RestoreColor()
+        GameTooltip_Hide()
+    end)
+    return button
+end
+
 function HG:ReadOnly(parent, x, y, width, initial)
     local edit = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     edit:SetPoint("TOPLEFT", x, y)

@@ -107,7 +107,7 @@ function HG:EnsureLookupModal()
     local page = modal:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     page:SetPoint("LEFT", previous, "RIGHT", 14, 0)
     modal.page = page
-    self:Button(modal, "NEXT", 214, -374, 76, function()
+    self:Button(modal, "NEXT", 320, -374, 76, function()
         if modal.offset + 10 < #modal.results then modal.offset = modal.offset + 10 end
         modal:RefreshRows()
     end)

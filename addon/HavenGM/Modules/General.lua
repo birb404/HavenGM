@@ -29,33 +29,50 @@ HG:RegisterTab("general", "GENERAL", 1, function(parent)
 
     local combat = HG:Section(parent, "COMBAT", 12, -120, 736, 88)
     HG:Button(combat, "KILL TARGET", 14, -42, 118, function() HG:Execute("kill") end)
-    HG:Button(combat, "REVIVE SELF", 142, -42, 108, function()
+    HG:Button(combat, "FOAM HIT", 142, -42, 104, function()
+        if not UnitExists("target") then HG:Notify("Select a target first.") return end
+        local current = UnitHealth("target") or 0
+        local maximum = UnitHealthMax("target") or current
+        local damage = math.min(math.floor(maximum * 0.80), current - 1)
+        if damage < 1 then HG:Notify("The target is already at minimum safe health.") return end
+        HG:Execute("damage", damage)
+    end, "Heavy non-lethal damage for tame, capture and scripted quest targets.")
+    HG:Button(combat, "REVIVE SELF", 256, -42, 108, function()
         HG:Execute("reviveName", UnitName("player"))
     end, "Revives your own character by name. HavenCore's bare .revive command requires a selected player.")
-    HG:Button(combat, "REPAIR SELF", 260, -42, 108, function()
+    HG:Button(combat, "REPAIR SELF", 374, -42, 108, function()
         HG:Execute("repairName", UnitName("player"))
     end, "Repairs all durability on your own character.")
-    HG:Button(combat, "SAVE CHARACTER", 378, -42, 132, function() HG:Execute("save") end,
+    HG:Button(combat, "SAVE CHARACTER", 492, -42, 132, function() HG:Execute("save") end,
         "Writes your current character state to the character database immediately.")
 
-    local utilities = HG:Section(parent, "UTILITIES", 12, -220, 736, 136)
+    local utilities = HG:Section(parent, "UTILITIES", 12, -220, 736, 96)
     HG:Label(utilities, "Speed", 14, -46)
-    local speedDisplay = HG:ReadOnly(utilities, 62, -37, 58, HG.db.inputs.speed or "1")
-    HG.fields.speed = speedDisplay
+    local speedDisplay = HG:Edit(utilities, "speed", 62, -37, 58, true, HG.db.inputs.speed or "1")
+    speedDisplay:SetScript("OnEnterPressed", function(self)
+        local value = tonumber(self:GetText())
+        if not value or value < 1 or value > 20 then
+            HG:Notify("Speed must be between 1 and 20.")
+            return
+        end
+        value = math.floor(value)
+        self:SetText(value)
+        self:ClearFocus()
+        HG:Execute("speed", value)
+    end)
+    HG:Step(utilities, speedDisplay, "-", 130, -37, -1, 1, 20, function(value) HG:Execute("speed", value) end)
+    HG:Step(utilities, speedDisplay, "+", 168, -37, 1, 1, 20, function(value) HG:Execute("speed", value) end)
     local presets = { 1, 2, 3, 5, 7, 10, 15, 20 }
     for index, value in ipairs(presets) do
-        HG:Button(utilities, tostring(value), 136 + ((index - 1) * 52), -37, 44, function()
+        HG:Button(utilities, tostring(value), 210 + ((index - 1) * 48), -37, 40, function()
             speedDisplay:SetText(value)
             HG.db.inputs.speed = tostring(value)
             HG:Execute("speed", value)
         end, "Apply movement speed x" .. value .. ".")
     end
-    HG:Button(utilities, "RESET SPEED", 566, -37, 126, function()
+    HG:Button(utilities, "RESET SPEED", 598, -37, 110, function()
         speedDisplay:SetText("1")
         HG.db.inputs.speed = "1"
         HG:Execute("speed", 1)
     end)
-    HG:Label(utilities,
-        "Speed presets apply immediately. The display is read-only and shows the last speed requested by HavenGM.",
-        14, -88, 680)
 end)

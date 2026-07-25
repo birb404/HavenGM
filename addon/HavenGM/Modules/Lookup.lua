@@ -3,16 +3,16 @@ local _, HG = ...
 HG:RegisterTab("lookup", "LOOKUP", 5, function(parent)
     local search = HG:Section(parent, "SEARCH", 12, -12, 736, 118)
     local selected = HG.lookupCategories[1]
-    local dropdown = HG:DropDown(search, "HavenGMLookupDropDown", 2, -38, 150, HG.lookupCategories, selected, function(item) selected = item end)
-    local query = HG:Edit(search, "lookupQuery", 184, -39, 310, false, "")
-    HG:ClearButton(search, query, 500, -39)
+    local dropdown = HG:DropDown(search, "HavenGMLookupDropDown", 2, -38, 128, HG.lookupCategories, selected, function(item) selected = item end)
+    local query = HG:Edit(search, "lookupQuery", 184, -39, 300, false, "")
+    HG:ClearButton(search, query, 490, -39)
     local function execute()
         local value = strtrim(query:GetText() or "")
         if value == "" then HG:Notify("Enter a search term.") return end
         selected = dropdown:GetSelected()
         HG:OpenLookupModal(selected.key, value, selected.field, selected.text:upper())
     end
-    HG:Button(search, "SEARCH", 538, -39, 94, execute)
+    HG:Button(search, "SEARCH", 528, -39, 94, execute)
     HG:Button(search, "OPEN MATCHING TOOL", 184, -75, 160, function()
         selected = dropdown:GetSelected()
         if selected.key == "lookupQuest" then HG:ShowTab("quests")

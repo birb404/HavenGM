@@ -12,7 +12,7 @@ local function check(parent, text, x, y, getter, setter)
 end
 
 HG:RegisterTab("settings", "SETTINGS", 8, function(parent)
-    local section = HG:Section(parent, "ADDON SETTINGS", 12, -12, 736, 300)
+    local section = HG:Section(parent, "ADDON SETTINGS", 12, -12, 736, 282)
     check(section, "Echo commands in chat", 14, -42,
         function() return HG.db.settings.echoCommands ~= false end,
         function(v) HG.db.settings.echoCommands = v end)
@@ -67,22 +67,17 @@ HG:RegisterTab("settings", "SETTINGS", 8, function(parent)
         HG.frame:ClearAllPoints()
         HG.frame:SetPoint("CENTER")
     end)
-    HG:Label(section,
-        "Toggle colors show the last state requested by HavenGM. They are not authoritative server telemetry.",
-        360, -258, 350)
     HG:Button(section, "RESET ADDON SETTINGS", 14, -252, 190, function()
         HG:Confirm("Reset every HavenGM setting and reload the UI?", "/reload", function()
             HavenGMDB = nil
             ReloadUI()
         end)
     end)
-    HG:Label(section,
-        "Ctrl + Right-click loads supported IDs without opening chat. Quest IDs can also be loaded with Quests > Load Selected Quest.",
-        224, -258, 470)
-
-    local community = HG:Section(parent, "COMMUNITY", 12, -326, 736, 88)
+    local community = HG:Section(parent, "COMMUNITY", 12, -306, 350, 104)
     HG:Button(community, "WOW HAVEN DISCORD", 14, -40, 190, function()
         StaticPopup_Show("HAVENGM_DISCORD")
     end, "Opens a selectable invite link for the WoW Haven Discord server.")
-    HG:Label(community, "Created by birb@", 224, -47, 180)
+
+    local about = HG:Section(parent, "ABOUT", 374, -306, 374, 104)
+    HG:Label(about, "Addon created by Birb@", 14, -48, 220)
 end)

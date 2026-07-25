@@ -12,10 +12,17 @@ HG:RegisterTab("debug", "DEBUG", 7, function(parent)
         if elapsed < 0.5 then return end
         elapsed = 0
         local x, y, z, map = UnitPosition("player")
+        local gps = HG.output and HG.output.lastGPS
+        local shownZ = z
+        local zSource = ""
+        if (not shownZ or shownZ == 0) and gps and gps.z then
+            shownZ = gps.z
+            zSource = " (last GPS)"
+        end
         local uiMap = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
         positionText:SetText(string.format(
-            "World Map: %s   UI Map: %s   X: %.2f   Y: %.2f   Z: %.2f",
-            tostring(map or "n/a"), tostring(uiMap or "n/a"), x or 0, y or 0, z or 0
+            "World Map: %s   UI Map: %s   X: %.2f   Y: %.2f   Z: %.2f%s",
+            tostring(map or "n/a"), tostring(uiMap or "n/a"), x or 0, y or 0, shownZ or 0, zSource
         ))
     end)
 
@@ -51,16 +58,16 @@ HG:RegisterTab("debug", "DEBUG", 7, function(parent)
         if id then HG:Execute("debugAnim", id) end
     end)
 
-    local output = HG:Section(parent, "SERVER OUTPUT", 12, -210, 736, 166)
+    local output = HG:Section(parent, "SERVER OUTPUT", 12, -210, 736, 208)
     local scroll = CreateFrame("ScrollFrame", "HavenGMDebugOutputScroll", output, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 14, -40)
-    scroll:SetPoint("BOTTOMRIGHT", -34, 40)
+    scroll:SetPoint("BOTTOMRIGHT", -142, 14)
     local text = CreateFrame("EditBox", nil, scroll)
     text:SetMultiLine(true)
     text:SetAutoFocus(false)
     text:SetFontObject(ChatFontNormal)
-    text:SetWidth(660)
-    text:SetHeight(90)
+    text:SetWidth(570)
+    text:SetHeight(150)
     text:SetTextInsets(4, 4, 4, 4)
     text:SetScript("OnEscapePressed", text.ClearFocus)
     scroll:SetScrollChild(text)
@@ -69,17 +76,17 @@ HG:RegisterTab("debug", "DEBUG", 7, function(parent)
         text:SetCursorPosition(0)
     end
     HG.output:Refresh()
-    HG:Button(output, "SELECT ALL", 14, -132, 96, function()
+    HG:Button(output, "SELECT ALL", 604, -40, 102, function()
         text:SetFocus()
         text:HighlightText()
     end)
-    HG:Button(output, "CLEAR", 120, -132, 72, function()
+    HG:Button(output, "CLEAR", 604, -76, 102, function()
         HG.output.lines = {}
         HG.output:Refresh()
     end)
-    HG:Label(output, "First ID", 210, -140)
-    local firstID = HG:Edit(output, "debugFirstID", 264, -132, 82, true, "")
-    HG:Button(output, "EXTRACT", 356, -132, 78, function()
+    HG:Label(output, "First ID", 604, -116)
+    local firstID = HG:Edit(output, "debugFirstID", 604, -132, 102, true, "")
+    HG:Button(output, "EXTRACT", 604, -164, 102, function()
         local id = HG.output:FirstID()
         if id then
             firstID:SetText(id)
@@ -89,5 +96,4 @@ HG:RegisterTab("debug", "DEBUG", 7, function(parent)
             HG:Notify("No numeric ID found in the captured output.")
         end
     end, "Extracts the first recognized ID and selects it for copying.")
-    HG:Label(output, "Captured responses stay out of normal chat.", 450, -138, 250)
 end)

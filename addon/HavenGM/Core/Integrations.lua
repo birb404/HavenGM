@@ -116,19 +116,49 @@ function HG:InstallIntegrations()
         return text .. " |cffd59b32[ID: " .. id .. "]|r"
     end
 
+    local function questNameFromButton(button)
+        if not button then return nil end
+        if button.GetText and button:GetText() and button:GetText() ~= "" then return button:GetText() end
+        for _, key in ipairs({ "Text", "text", "Title", "title" }) do
+            local value = button[key]
+            if value and value.GetText and value:GetText() and value:GetText() ~= "" then
+                return value:GetText()
+            end
+        end
+    end
+
+    local function loadQuest(button, id)
+        if not id then return end
+        local name = questNameFromButton(button)
+        HG.lastQuestID = id
+        HG.lastQuestName = name
+        HG:SetField("questID", id)
+        if name then HG:SetField("questSearch", name:gsub("%s*%[ID:%s*%d+%].*$", "")) end
+        HG:Notify("Loaded quest ID: " .. id)
+    end
+
     local function decorateQuestButton(button)
         local id = questIDFromButton(button)
         if not id then return end
         if not button.HavenGMQuestID then
-            local badge = button:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-            badge:SetPoint("RIGHT", button, "RIGHT", -6, 0)
-            badge:SetJustifyH("RIGHT")
-            badge:SetTextColor(0.95, 0.68, 0.16)
+            local badge = CreateFrame("Button", nil, button)
+            badge:SetSize(70, 18)
+            badge:SetPoint("RIGHT", button, "RIGHT", -24, 0)
+            badge.label = badge:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+            badge.label:SetAllPoints()
+            badge.label:SetJustifyH("RIGHT")
+            badge.label:SetTextColor(0.95, 0.68, 0.16)
+            badge:SetScript("OnEnter", function(self) self.label:SetTextColor(1, 0.9, 0.25) end)
+            badge:SetScript("OnLeave", function(self) self.label:SetTextColor(0.95, 0.68, 0.16) end)
+            badge:SetScript("OnClick", function(self)
+                loadQuest(self:GetParent(), self.questID)
+            end)
             button.HavenGMQuestID = badge
             HG.questIDBadges = HG.questIDBadges or {}
             HG.questIDBadges[#HG.questIDBadges + 1] = badge
         end
-        button.HavenGMQuestID:SetText("[" .. id .. "]")
+        button.HavenGMQuestID.questID = id
+        button.HavenGMQuestID.label:SetText("[" .. id .. "]")
         button.HavenGMQuestID:Show()
     end
 
@@ -171,9 +201,13 @@ function HG:InstallIntegrations()
             "QuestTitleButton_OnClick", "GossipTitleButton_OnClick",
         }) do
             install(name, function(button, mouseButton)
+                local id = questIDFromButton(button)
+                if id then
+                    HG.lastQuestID = id
+                    HG.lastQuestName = questNameFromButton(button)
+                end
                 if HG.db.settings.captureIDs ~= false and mouseButton == "RightButton" and IsControlKeyDown() then
-                    local id = questIDFromButton(button)
-                    if id then HG:SetField("questID", id); HG:Notify("Selected quest ID: " .. id) end
+                    if id then loadQuest(button, id) end
                 end
             end)
         end

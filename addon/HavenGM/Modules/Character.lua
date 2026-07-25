@@ -85,13 +85,4 @@ HG:RegisterTab("character", "CHARACTER", 2, function(parent)
         if id then HG:Execute("castTarget", id) end
     end)
 
-    local morph = HG:Section(parent, "MORPH — ADVANCED DISPLAY ID", 12, -360, 736, 62)
-    HG:Label(morph, "Display ID", 14, -44)
-    HG:Edit(morph, "morphID", 84, -35, 80, true, "")
-    HG:Button(morph, "MORPH", 174, -35, 76, function()
-        local id = HG:GetPositiveInteger("morphID", "display ID")
-        if id then HG:Execute("morph", id) end
-    end, "Morph expects a creature Display ID, not an NPC entry or animation ID. Use Debug > NPC Info to discover one.")
-    HG:Button(morph, "CLEAR", 260, -35, 68, function() HG:Execute("demorph") end)
-    HG:Label(morph, "Use Debug > NPC Info to find a target creature's DisplayID.", 344, -42, 360)
 end)

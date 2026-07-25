@@ -85,12 +85,13 @@ HG:RegisterTab("creator", "CREATOR", 6, function(parent)
     HG:Label(scene, "Reliable visible actions are provided as presets. Raw animation and sound IDs are under Debug.", 370, -44, 340)
 
     HG:Label(scene, "Speech", 14, -88)
-    HG:Edit(scene, "npcSpeech", 62, -79, 420, false, "")
-    HG:Button(scene, "SAY", 492, -79, 72, function()
+    local speech = HG:Edit(scene, "npcSpeech", 62, -79, 382, false, "")
+    HG:ClearButton(scene, speech, 450, -79)
+    HG:Button(scene, "SAY", 488, -79, 72, function()
         local value = textValue("npcSpeech", "speech text")
         if value then HG:Execute("npcSay", value) end
     end)
-    HG:Button(scene, "YELL", 574, -79, 72, function()
+    HG:Button(scene, "YELL", 570, -79, 72, function()
         local value = textValue("npcSpeech", "speech text")
         if value then HG:Execute("npcYell", value) end
     end)
