@@ -2,7 +2,7 @@
 ## Title: HavenGM
 ## Notes: HavenCore GM, quest testing and content development toolkit
 ## Author: Birb / WoW Haven
-## Version: 0.3.6-beta
+## Version: 0.3.7-beta
 ## SavedVariables: HavenGMDB
 
 Core\Bootstrap.lua
