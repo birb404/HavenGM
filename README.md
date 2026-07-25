@@ -7,7 +7,7 @@ which server commands are being executed.
 
 ## Current phase
 
-v0.3.5-beta is implemented as a modular, tab-based feature build for a complete
+v0.3.6-beta is implemented as a modular, tab-based feature build for a complete
 in-client testing pass.
 
 ## Features

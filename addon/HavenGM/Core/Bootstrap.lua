@@ -1,7 +1,7 @@
 local ADDON_NAME, HG = ...
 
 HG.name = ADDON_NAME
-HG.version = "0.3.5-beta"
+HG.version = "0.3.6-beta"
 HG.prefix = "|cffd59b32HavenGM:|r "
 HG.tabs = {}
 HG.tabByKey = {}

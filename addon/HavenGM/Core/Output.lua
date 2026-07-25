@@ -13,12 +13,6 @@ end
 function Output:Add(message)
     if GetTime() > self.activeUntil then return end
     local clean = tostring(message or "")
-    local x = clean:match("[Xx]%s*[:=]%s*([%-%.%d]+)")
-    local y = clean:match("[Yy]%s*[:=]%s*([%-%.%d]+)")
-    local z = clean:match("[Zz]%s*[:=]%s*([%-%.%d]+)")
-    if x and y and z then
-        self.lastGPS = { x = tonumber(x), y = tonumber(y), z = tonumber(z) }
-    end
     self.lines[#self.lines + 1] = clean
     if HG.AddLookupResult then HG:AddLookupResult(clean) end
     if #self.lines > 80 then table.remove(self.lines, 1) end

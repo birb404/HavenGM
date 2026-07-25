@@ -55,8 +55,6 @@ HG:RegisterTab("character", "CHARACTER", 2, function(parent)
         local count = HG:GetPositiveInteger("itemQty", "quantity", 999)
         if id and count then HG:Execute("removeItem", id, count) end
     end)
-    HG:Label(items, "Ctrl + Right-click a bag item to load its ID.", 530, -76, 190)
-
     local spells = HG:Section(parent, "SPELLS", 12, -250, 736, 98)
     HG:Label(spells, "Search", 14, -44)
     local spellSearch = HG:Edit(spells, "spellSearch", 66, -35, 180, false, "")
