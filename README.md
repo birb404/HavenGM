@@ -34,7 +34,7 @@ Restart the client or reload the UI.
 
 ### Quests
 
-![Quests](images/quests.png)
+![Quests](images/questing.png)
 
 ### Teleport
 
