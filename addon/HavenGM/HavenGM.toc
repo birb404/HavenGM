@@ -1,0 +1,25 @@
+## Interface: 80300
+## Title: HavenGM
+## Notes: HavenCore GM, quest testing and content development toolkit
+## Author: Birb / WoW Haven
+## Version: 0.3.4-beta
+## SavedVariables: HavenGMDB
+
+Core\Bootstrap.lua
+Data\Commands.lua
+Data\Teleports.lua
+Core\Commands.lua
+Core\Widgets.lua
+Core\Output.lua
+Core\SearchModal.lua
+Core\Followers.lua
+Modules\General.lua
+Modules\Character.lua
+Modules\Quests.lua
+Modules\Teleport.lua
+Modules\Lookup.lua
+Modules\Creator.lua
+Modules\Debug.lua
+Modules\Settings.lua
+Core\Integrations.lua
+Core\UI.lua

@@ -1,0 +1,13 @@
+# Packaged release artifacts
+dist/
+*.zip
+
+# Local test output
+logs/
+*.log
+
+# Editor and OS noise
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
